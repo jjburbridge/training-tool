@@ -324,7 +324,7 @@ export function WorkoutProfileGraph({
                 // Create path for the line
                 const pathData =
                   dataPoints.length === 1
-                    ? `M ${dataPoints[0].x} ${dataPoints[0].y}`
+                    ? `M ${dataPoints[0]!.x} ${dataPoints[0]!.y}`
                     : dataPoints
                         .map(
                           (point, index) =>

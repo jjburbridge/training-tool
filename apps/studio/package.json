@@ -1,0 +1,32 @@
+{
+  "name": "studio",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "start": "sanity start",
+    "lint": "eslint --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "schema:extract": "sanity schema extract",
+    "typegen": "sanity typegen generate"
+  },
+  "dependencies": {
+    "@sanity/icons": "^3.7.4",
+    "@sanity/vision": "^5.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "sanity": "^5.1.0",
+    "sanity-plugin-media": "^4.1.1",
+    "styled-components": "^6.1.19"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@sanity/blueprints": "0.7.1",
+    "@types/node": "^25.0.3",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "eslint": "^9.39.2",
+    "typescript": "5.9.3"
+  }
+}

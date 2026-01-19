@@ -1,0 +1,11 @@
+node_modules
+.DS_Store
+dist
+.sanity
+
+
+
+# Sanity Functions
+functions/**/.env*
+functions/**/.build/
+functions/**/node_modules/

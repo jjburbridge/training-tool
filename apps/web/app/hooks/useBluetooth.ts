@@ -151,7 +151,7 @@ export function useBluetooth() {
   ) => {
     try {
       const heartRateChar = await heartRateService.getCharacteristic(
-        CHARACTERISTICS.HEART_RATE
+        CHARACTERISTICS.HRM
       );
       heartRateChar.addEventListener("characteristicvaluechanged", (e) => {
         const target = e.target as BluetoothRemoteGATTCharacteristic;

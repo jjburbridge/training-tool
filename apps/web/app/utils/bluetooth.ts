@@ -12,6 +12,7 @@ export const CHARACTERISTICS = {
   STATUS: 0x2ada,
   POWER: 0x2a63,
   CSC: 0x2A5B,
+  HRM: 0x2A37,
 } as const;
 
 export function handleBluetoothError(error: unknown): string {

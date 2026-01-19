@@ -174,7 +174,7 @@ export function WorkoutProfileGraph({
 
               // Divide the ramp into segments to show zone transitions
               const numSegments = Math.max(20, Math.ceil(width / 5)); // At least 20 segments or one per 5px
-              const segments: JSX.Element[] = [];
+              const segments: React.ReactElement[] = [];
 
               for (let i = 0; i < numSegments; i++) {
                 const segmentProgress = i / numSegments;

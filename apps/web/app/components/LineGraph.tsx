@@ -29,7 +29,7 @@ export function LineGraph({ data, width = 400, height = 200 }: LineGraphProps) {
   // Create path string for the line
   const pathData =
     data.length === 1
-      ? `M ${points[0].x} ${points[0].y}`
+      ? `M ${points[0]!.x} ${points[0]!.y}`
       : points
           .map(
             (point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`

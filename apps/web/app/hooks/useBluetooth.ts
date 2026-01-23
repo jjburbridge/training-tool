@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, Dispatch, SetStateAction } from "react";
 import type { DeviceInfo } from "../types/bluetooth";
 import {
   BLUETOOTH_SERVICES,
@@ -13,6 +13,7 @@ export function useBluetooth() {
   const [connectedDevice, setConnectedDevice] = useState<DeviceInfo | null>(
     null
   );
+  const [cadenceSource, setCadenceSource] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<string | null>(null);
   const [power, setPower] = useState<number | null>(0);
@@ -32,7 +33,9 @@ export function useBluetooth() {
   const [stopNotifications, setStopNotifications] = useState<
     (() => void) | null
   >(null);
-
+  const [writeValueFunction, setWriteValueFunction] = useState<
+    ((value: Uint8Array) => void) | null
+  >(null);
   const checkSupport = useCallback(() => {
     if (typeof window !== "undefined" && navigator.bluetooth) {
       setIsSupported(true);
@@ -106,14 +109,24 @@ export function useBluetooth() {
     }
   };
 
-  const setupCadenceNotifications = async (
+  const setupCadenceNotifications = useCallback(async (
     cadenceService: BluetoothRemoteGATTService,
-    onCadenceUpdate: (cadence: number) => void
+    {setCadence, setHistoricalCadenceData}: 
+    {
+      setCadence: Dispatch<SetStateAction<number | null>>,
+      setHistoricalCadenceData: Dispatch<SetStateAction<number[]>>,
+    }
   ) => {
     try {
       const cadenceChar = await cadenceService.getCharacteristic(
         CHARACTERISTICS.CSC
       );
+
+      let lastCSCCrankRevs = 0;
+      let lastCSCCrankTime = 0;
+      let lastValidCadence = 0;
+      let lastValidCadenceTime = 0;
+
       cadenceChar.addEventListener("characteristicvaluechanged", (e) => {
         const target = e.target as BluetoothRemoteGATTCharacteristic;
         const value = (
@@ -121,8 +134,58 @@ export function useBluetooth() {
         ).value;
         if (!value) return;
         const dv = new DataView(value.buffer);
-        const cadence = dv.getUint8(1); // Cadence is typically at offset 1
-        onCadenceUpdate(cadence);
+        const flags = dv.getUint8(0);
+
+        // const bytes = new Uint8Array(e.target.value.buffer);
+        // const hexDump = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        // console.log('CSC Measurement:', hexDump, 'flags:', '0x' + flags.toString(16).padStart(2, '0'));
+
+        let offset = 1;
+        if (flags & 0x01) {
+          offset += 6; // Skip wheel data (4 bytes revs + 2 bytes time)
+        }
+
+        // Crank Revolution Data Present (bit 1)
+        if (flags & 0x02) {
+            const cumulativeCrankRevs = dv.getUint16(offset, true);
+            const lastCrankEventTime = dv.getUint16(offset + 2, true); // in 1/1024 seconds
+
+            console.log('CSC Crank revs:', cumulativeCrankRevs, 'time:', lastCrankEventTime);
+
+            // Calculate cadence from deltas
+            if (lastCSCCrankRevs !== undefined && lastCSCCrankTime !== undefined) {
+                const revDelta = (cumulativeCrankRevs - lastCSCCrankRevs) & 0xFFFF;
+                const timeDelta = ((lastCrankEventTime - lastCSCCrankTime) & 0xFFFF) / 1024.0;
+
+                console.log('CSC Delta revs:', revDelta, 'delta time:', timeDelta.toFixed(3), 's');
+
+                if (timeDelta > 0 && revDelta > 0 && revDelta < 20) {
+                    const cadence = Math.round((revDelta / timeDelta) * 60); // RPM
+                    // Only update if we're the primary cadence source (first one wins)
+                    if (!cadenceSource || cadenceSource === 'csc') {
+                        setCadenceSource('csc');
+                        setCadence(cadence);
+                        setHistoricalCadenceData((prev: number[] ) => [...prev, cadence]);
+                    }
+                    console.log('Cadence from CSC:', cadence, 'RPM');
+
+                    // Store last valid cadence and timestamp for timeout detection
+                    lastValidCadence = cadence;
+                    lastValidCadenceTime = Date.now();
+                } else if (timeDelta === 0 && revDelta === 0) {
+                    // Duplicate packet - keep current cadence but check for timeout
+                    if (lastValidCadenceTime && (Date.now() - lastValidCadenceTime) > 2000) {
+                        // No new data for 2 seconds, user stopped pedaling
+                        setCadence(0);
+                        setHistoricalCadenceData((prev: number[] ) => [...prev, 0]);
+                    }
+                    // Otherwise keep the last valid cadence
+                }
+            }
+
+            lastCSCCrankRevs = cumulativeCrankRevs;
+            lastCSCCrankTime = lastCrankEventTime;
+        }
       });
 
       const charWithNotifications =
@@ -143,11 +206,15 @@ export function useBluetooth() {
       console.error(e);
       return { stopNotifications: null, startNotifications: null };
     }
-  };
+  }, [cadenceSource]);
 
-  const setupHeartRateNotifications = async (
+  const setupHeartRateNotifications = useCallback(async (
     heartRateService: BluetoothRemoteGATTService,
-    onHeartRateUpdate: (heartRate: number) => void
+    {setHeartRate, setHistoricalHeartRateData}: 
+    {
+      setHeartRate: Dispatch<SetStateAction<number | null>>,
+      setHistoricalHeartRateData: Dispatch<SetStateAction<number[]>>,
+    }
   ) => {
     try {
       const heartRateChar = await heartRateService.getCharacteristic(
@@ -160,8 +227,11 @@ export function useBluetooth() {
         ).value;
         if (!value) return;
         const dv = new DataView(value.buffer);
-        const heartRate = dv.getUint8(1); // Heart rate is typically at offset 1
-        onHeartRateUpdate(heartRate);
+        const flags = dv.getUint8(0);
+        const heartRate = flags & 0x01 ? dv.getUint16(1, true) : dv.getUint8(1); // Heart rate is typically at offset 1
+        setHeartRate(heartRate);
+        setHistoricalHeartRateData((prev: number[] ) => [...prev, heartRate]);
+
       });
 
       const charWithNotifications =
@@ -182,15 +252,27 @@ export function useBluetooth() {
       console.error(e);
       return { stopNotifications: null, startNotifications: null };
     }
-  };
-  const setupPowerNotifications = async (
+  }, []);
+  const setupPowerNotifications = useCallback(async (
     powerService: BluetoothRemoteGATTService,
-    onPowerUpdate: (power: number) => void
+    {setPower, setHistoricalPowerData, setCadenceSource, setCadence, setHistoricalCadenceData}: 
+    {
+      setPower: Dispatch<SetStateAction<number | null>>,
+      setHistoricalPowerData: Dispatch<SetStateAction<number[]>>,
+      setCadenceSource: Dispatch<SetStateAction<string | null>>,
+      setCadence: Dispatch<SetStateAction<number | null>>,
+      setHistoricalCadenceData: Dispatch<SetStateAction<number[]>>,
+    }
   ) => {
     try {
       const powerChar = await powerService.getCharacteristic(
         CHARACTERISTICS.POWER
       );
+
+      let lastCrankRevs = 0;
+      let lastCrankTime = 0;
+      let lastValidCadence = 0;
+      let lastValidCadenceTime = 0;
 
       powerChar.addEventListener("characteristicvaluechanged", (e) => {
         const target = e.target as BluetoothRemoteGATTCharacteristic;
@@ -201,28 +283,89 @@ export function useBluetooth() {
 
         const dv = new DataView(value.buffer);
         const flags = dv.getUint16(0, true);
-        const bytes = new Uint8Array(value.buffer);
-        const hexDump = Array.from(bytes)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(" ");
+        // const bytes = new Uint8Array(value.buffer);
+        // const hexDump = Array.from(bytes)
+        //   .map((b) => b.toString(16).padStart(2, "0"))
+        //   .join(" ");
 
-        console.log(
-          "Cycling Power raw:",
-          hexDump,
-          "flags:",
-          "0x" + flags.toString(16).padStart(4, "0"),
-          "len:",
-          bytes.length
-        );
+        // console.log(
+        //   "Cycling Power raw:",
+        //   hexDump,
+        //   "flags:",
+        //   "0x" + flags.toString(16).padStart(4, "0"),
+        //   "len:",
+        //   bytes.length
+        // );
+        const power = dv.getInt16(2, true);
+        // console.log('Power from Cycling Power Service at offset 2:', power, 'W');
 
-        const newPower = dv.getInt16(2, true);
-        console.log(
-          "Power from Cycling Power Service at offset 2:",
-          newPower,
-          "W"
-        );
+        // Only use Cycling Power if valid (non-zero), otherwise keep Indoor Bike Data power
+        if (power > 0) {
+            setPower(power);
+            setHistoricalPowerData((prev: number[] ) => [...prev, power] );
+        }
 
-        onPowerUpdate(newPower);
+        // Calculate offset for optional fields (same approach as debug.html)
+        let offset = 4; // Start after flags (2) + power (2)
+
+        // Skip Pedal Power Balance (bit 0 = 0x01)
+        if (flags & 0x01) {
+            offset += 1;
+        }
+
+        // Skip Accumulated Torque (bit 2 = 0x04)
+        if (flags & 0x04) {
+            offset += 2;
+        }
+
+        // Skip Wheel Revolution Data (bit 4 = 0x10)
+        if (flags & 0x10) {
+            offset += 6; // 4 bytes wheel revs + 2 bytes wheel time
+        }
+
+        // Crank Revolution Data (bit 5 = 0x20)
+        if (flags & 0x20) {
+            // Standard spec: 16-bit crank revs + 16-bit time
+            const cumulativeCrankRevs = dv.getUint16(offset, true);
+            const lastCrankEventTime = dv.getUint16(offset + 2, true); // in 1/1024 seconds
+
+            // Calculate cadence from deltas (if we have previous values)
+            if (lastCrankRevs !== undefined && lastCrankTime !== undefined) {
+                // Handle 16-bit wrap-around
+                const revDelta = (cumulativeCrankRevs - lastCrankRevs) & 0xFFFF;
+                const timeDelta = ((lastCrankEventTime - lastCrankTime) & 0xFFFF) / 1024.0; // seconds
+
+                // console.log('CP Crank data - revs:', cumulativeCrankRevs, 'time:', lastCrankEventTime,
+                //             'delta revs:', revDelta, 'delta time:', timeDelta.toFixed(3), 's');
+
+                if (timeDelta > 0 && revDelta > 0 && revDelta < 20) {
+                    const cadence = Math.round((revDelta / timeDelta) * 60); // RPM
+                    // Only use power service cadence if CSC isn't providing it (CSC is preferred)
+                    if (cadenceSource !== 'csc') {
+                        setCadenceSource('power');
+                        setCadence(cadence);
+                        setHistoricalCadenceData((prev: number[] ) => [...prev, cadence]);
+                    }
+                    // console.log('Cadence from Cycling Power:', cadence, 'RPM');
+
+                    lastValidCadence = cadence;
+                    lastValidCadenceTime = Date.now();
+                } else if (timeDelta === 0 && revDelta === 0) {
+                    // Duplicate - keep cadence but check timeout
+                    if (lastValidCadenceTime && (Date.now() - lastValidCadenceTime) > 2000) {
+                        setCadence(0);
+                        setHistoricalCadenceData((prev: number[] ) => [...prev, 0]);
+                    }
+                }
+            }
+
+            lastCrankRevs = cumulativeCrankRevs;
+            lastCrankTime = lastCrankEventTime;
+
+            offset += 4; // Skip past crank data (2 bytes revs + 2 bytes time)
+        }
+        // Note: If no crank data in Cycling Power, Indoor Bike Data will provide cadence
+
       });
 
       const charWithNotifications =
@@ -242,18 +385,181 @@ export function useBluetooth() {
     } catch {
       return { stopNotifications: null, startNotifications: null };
     }
-  };
+  }, [cadenceSource]);
+  const setupFTMNotifications = useCallback(async (
+    FTMService: BluetoothRemoteGATTService,
+    {
+      setCadence, 
+      setPower, 
+      setHeartRate, 
+      setHistoricalCadenceData, 
+      setHistoricalPowerData, 
+      setHistoricalHeartRateData,
+      setCadenceSource,
+    }: 
+    {
+      setCadence: Dispatch<SetStateAction<number | null>>,
+      setPower: Dispatch<SetStateAction<number | null>>,
+      setHeartRate: Dispatch<SetStateAction<number | null>>,
+      setHistoricalCadenceData: Dispatch<SetStateAction<number[]>>,
+      setHistoricalPowerData: Dispatch<SetStateAction<number[]>>,
+      setHistoricalHeartRateData: Dispatch<SetStateAction<number[]>>
+      setCadenceSource: Dispatch<SetStateAction<string | null>>,
+    }
+  ) => {
+    try {
+      
+      const indoorBikeChar = await FTMService.getCharacteristic(CHARACTERISTICS.INDOOR_BIKE); 
+      indoorBikeChar.addEventListener('characteristicvaluechanged', (e) => {
+        const target = e.target as BluetoothRemoteGATTCharacteristic;
+        const value = (
+          target as BluetoothRemoteGATTCharacteristic & { value?: DataView }
+        ).value;
+        if (!value) return;
+        const dv = new DataView(value.buffer);
+        const flags = dv.getUint16(0, true);
+        let offset = 2;
+
+        if (!(flags & 0x01)) {
+          offset += 2; // Skip speed
+        }
+
+        // Average Speed Present (bit 1)
+        if (flags & 0x02) {
+            offset += 2; // Skip average speed
+        }
+
+        // Instantaneous Cadence Present (bit 2)
+        if (flags & 0x04 && !cadenceSource) {
+            const cadence = dv.getUint16(offset, true);
+            setCadence(cadence);
+            setHistoricalCadenceData((prev: number[] ) => [...prev, cadence]);
+            setCadenceSource('ftm');
+            offset += 2;
+        }
+
+        // Average Cadence Present (bit 3)
+        if (flags & 0x08) {
+            offset += 2;
+        }
+
+        // Total Distance Present (bit 4)
+        if (flags & 0x10) {
+            offset += 3; // 24-bit field
+        }
+
+        // Resistance Level Present (bit 5)
+        if (flags & 0x20) {
+            offset += 2; // Skip resistance
+        }
+
+        // Instantaneous Power Present (bit 6)
+        if (flags & 0x40) {
+            const power = dv.getInt16(offset, true);
+            // Use Indoor Bike Data power as primary source
+            setPower(power);
+            setHistoricalPowerData((prev: number[] ) => [...prev, power] );
+            offset += 2;
+        }
+
+        // Average Power Present (bit 7)
+        if (flags & 0x80) {
+            offset += 2;
+        }
+
+        // Extended Energy fields (bits 8-11)
+        if (flags & 0x100) { // Total Energy
+            offset += 2;
+        }
+        if (flags & 0x200) { // Energy Per Hour
+            offset += 2;
+        }
+        if (flags & 0x400) { // Energy Per Minute
+            offset += 1;
+        }
+        if (flags & 0x800) { // Heart Rate
+            const hr = dv.getUint8(offset);
+            setHeartRate(hr);
+            setHistoricalHeartRateData((prev: number[] ) => [...prev, hr] );
+            offset += 1;
+        }
+      });
+      return {
+        stopNotifications: () => {
+          indoorBikeChar.stopNotifications().catch(console.error);
+        },
+        startNotifications: () => {
+          indoorBikeChar.startNotifications().catch(console.error);
+        },
+      };
+    } catch (error) {
+      console.error("Error setting up FTM notifications:", error);
+    }
+
+  }, [cadenceSource]);
+
+  const setupControlPointNotifications = useCallback(async (
+    ftmsService: BluetoothRemoteGATTService,
+  ) => {
+    try {
+
+      const controlPointChar = await ftmsService.getCharacteristic(CHARACTERISTICS.CONTROL_POINT);
+
+      // Subscribe to control point responses
+      controlPointChar.addEventListener('characteristicvaluechanged', (e) => {
+        const target = e.target as BluetoothRemoteGATTCharacteristic;
+        const value = (
+          target as BluetoothRemoteGATTCharacteristic & { value?: DataView }
+        ).value;
+        if (!value) return;
+        const data = new Uint8Array(value.buffer);
+        const responseStr = Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ');
+        console.log('response', responseStr);
+        // Decode response
+        if (data[0] === 0x80) {
+          const opcode = data[1];
+          const result = data[2];
+          const resultCodes = ['', 'Success', 'Not Supported', 'Invalid Param', 'Failed', 'Control Not Permitted'];
+          console.log(`FTMS Response: ${responseStr} (${resultCodes[result ?? 0] || 'Unknown'})`,`opcode: ${opcode}`, result === 0x01 ? 'success' : 'error');
+        } else {
+          console.log(`FTMS Response: ${responseStr}`, 'info');
+        }
+      });
+
+       // Send Request Control command (0x00) - no parameters needed
+       const requestControl = new Uint8Array([0x00]);
+       await controlPointChar.writeValue(requestControl);
+       console.log('Sent Request Control (0x00)', 'info');
+
+      return {
+        stopNotifications: () => {
+          controlPointChar.stopNotifications().catch(console.error);
+        },
+        startNotifications: () => {
+          controlPointChar.startNotifications().catch(console.error);
+        },
+        writeValue: (value: Uint8Array) => {
+          controlPointChar.writeValue(value).catch(console.error);
+        },
+      };
+    } catch (error) {
+      console.log("Error setting up control point notifications:", error);
+      return { stopNotifications: null, startNotifications: null, writeValue: null };
+    }
+  }, []);
   const connectToDevice = useCallback(
     async (
       deviceInfo: DeviceInfo
     ): Promise<{
       startNotifications: () => void;
       stopNotifications: () => void;
+      writeValue: (value: Uint8Array) => void;
     }> => {
       setError(null);
       const notificationFunctions = {
         startNotifications: null as (() => void) | null,
         stopNotifications: null as (() => void) | null,
+        writeValue: null as ((value: Uint8Array) => void) | null,
       };
 
       try {
@@ -261,156 +567,162 @@ export function useBluetooth() {
         if (!server) {
           throw new Error("Failed to connect to GATT server");
         }
+        console.log('server', server);
 
         setConnectedDevice(deviceInfo);
+        const allStartFunctions: (() => void)[] = [];
+        const allStopFunctions: (() => void)[] = [];
+        const allWriteValueFunctions: ((value: Uint8Array) => void)[] = [];
 
-        try {
-          const FTMService = await server.getPrimaryService(
-            BLUETOOTH_SERVICES.FTM
-          );
-          const powerService = await server.getPrimaryService(
-            BLUETOOTH_SERVICES.POWER
-          );
-          // const cadenceService = await server.getPrimaryService(
-          //   BLUETOOTH_SERVICES.CADENCE
-          // );
-          // const heartRateService = await server.getPrimaryService(
-          //   BLUETOOTH_SERVICES.HEART_RATE
-          // );
-          // const deviceInfoService = await server.getPrimaryService(
-          //   BLUETOOTH_SERVICES.DEVICE_INFO
-          // );
+        // Define service configurations
+        const serviceConfigs = [
+          { 
+            service: BLUETOOTH_SERVICES.FTM,
+            setupFunction: setupFTMNotifications,
+            params: {setCadence, setPower, setHeartRate, setHistoricalCadenceData, setHistoricalPowerData, setHistoricalHeartRateData, setCadenceSource},
+            errorMessage: "Error getting FTM service:"
+          },
+          {
+            service: BLUETOOTH_SERVICES.POWER,
+            setupFunction: setupPowerNotifications,
+            params: {setPower, setHistoricalPowerData, setCadenceSource, setCadence, setHistoricalCadenceData},
+            errorMessage: "Error getting power service:"
+          },
+          {
+            service: BLUETOOTH_SERVICES.CADENCE,
+            setupFunction: setupCadenceNotifications,
+            params: {setCadence, setHistoricalCadenceData, setCadenceSource},
+            errorMessage: "Error getting power service:"
+          },
+          {
+            service: BLUETOOTH_SERVICES.HEART_RATE,
+            setupFunction: setupHeartRateNotifications,
+            params: {setHeartRate, setHistoricalHeartRateData},
+            errorMessage: "Error getting heart rate service:"
+          },
+          {
+            service: BLUETOOTH_SERVICES.FTM,
+            setupFunction: setupControlPointNotifications,
+            params: {},
+            errorMessage: "Error getting control point service:"
+          }
+        ];
 
-          const info: string[] = [];
-
-          // Setup power notifications
-          const powerNotificationFunctions = await setupPowerNotifications(
-            powerService,
-            (newPower) => {
-              setHistoricalPowerData((prev) => [...prev, newPower]);
-              setPower(newPower);
+      
+        // Process each service configuration
+        for (const config of serviceConfigs) {
+          try {
+            const service = await server.getPrimaryService(config.service);
+            const notificationFunctions = await config.setupFunction(service, config.params as any);
+            console.log('setup', config.service);
+            if (notificationFunctions && notificationFunctions.startNotifications) {
+              allStartFunctions.push(notificationFunctions.startNotifications);
             }
-          );
-
-          // const cadenceNotificationFunctions = await setupCadenceNotifications(
-          //   cadenceService,
-          //   (newCadence) => {
-          //     setHistoricalCadenceData((prev) => [...prev, newCadence]);
-          //     setCadence(newCadence);
-          //   }
-          // );
-          // const heartRateNotificationFunctions =
-          //   await setupHeartRateNotifications(
-          //     heartRateService,
-          //     (newHeartRate) => {
-          //       setHistoricalHeartRateData((prev) => [...prev, newHeartRate]);
-          //       setHeartRate(newHeartRate);
-          //     }
-          //   );
-
-          // Combine all notification functions into single start/stop functions
-          const allStartFunctions: (() => void)[] = [];
-          const allStopFunctions: (() => void)[] = [];
-
-          if (powerNotificationFunctions.startNotifications) {
-            allStartFunctions.push(
-              powerNotificationFunctions.startNotifications
-            );
+            if (notificationFunctions && notificationFunctions.stopNotifications) {
+              allStopFunctions.push(notificationFunctions.stopNotifications);
+            }
+            if (notificationFunctions && notificationFunctions.writeValue) {
+              console.log('writeValue', notificationFunctions.writeValue);
+              allWriteValueFunctions.push(notificationFunctions.writeValue);
+            }
+          } catch (error) {
+            console.log(config.errorMessage, error);
           }
-          if (powerNotificationFunctions.stopNotifications) {
-            allStopFunctions.push(powerNotificationFunctions.stopNotifications);
-          }
-          // if (cadenceNotificationFunctions.startNotifications) {
-          //   allStartFunctions.push(
-          //     cadenceNotificationFunctions.startNotifications
-          //   );
-          // }
-          // if (cadenceNotificationFunctions.stopNotifications) {
-          //   allStopFunctions.push(
-          //     cadenceNotificationFunctions.stopNotifications
-          //   );
-          // }
-          // if (heartRateNotificationFunctions.startNotifications) {
-          //   allStartFunctions.push(
-          //     heartRateNotificationFunctions.startNotifications
-          //   );
-          // }
-          // if (heartRateNotificationFunctions.stopNotifications) {
-          //   allStopFunctions.push(
-          //     heartRateNotificationFunctions.stopNotifications
-          //   );
-          // }
+        }
 
-          // Create combined functions
-          const combinedStartNotifications = () => {
-            allStartFunctions.forEach((fn) => {
-              try {
-                fn();
-              } catch (error) {
-                console.error("Error starting notifications:", error);
-              }
-            });
-          };
 
-          const combinedStopNotifications = () => {
-            allStopFunctions.forEach((fn) => {
-              try {
-                fn();
-              } catch (error) {
-                console.error("Error stopping notifications:", error);
-              }
-            });
-          };
+        // Create combined functions
+        const combinedStartNotifications = () => {
+          allStartFunctions.forEach((fn) => {
+            try {
+              fn();
+            } catch (error) {
+              console.log("Error starting notifications:", error);
+            }
+          });
+        };
 
+        const combinedStopNotifications = () => {
+          allStopFunctions.forEach((fn) => {
+            try {
+              fn();
+            } catch (error) {
+              console.log("Error stopping notifications:", error);
+            }
+          });
+        };
+
+        const combinedWriteValue = (value: Uint8Array) => {
+          allWriteValueFunctions.forEach((fn) => {
+            try {
+              fn(value);
+            } catch (error) {
+              console.log("Error writing value:", error);
+            }
+          });
+        };  
+        console.log('allStartFunctions', allStartFunctions);
+        console.log('allStopFunctions', allStopFunctions);
+        console.log('allWriteValueFunctions', allWriteValueFunctions);
           // Store combined notification functions in state
-          if (allStartFunctions.length > 0) {
-            setStartNotifications(() => combinedStartNotifications);
-          }
-          if (allStopFunctions.length > 0) {
-            setStopNotifications(() => combinedStopNotifications);
-          }
-
-          // Store individual functions for return value
-          notificationFunctions.startNotifications = combinedStartNotifications;
-          notificationFunctions.stopNotifications = combinedStopNotifications;
-
-          if (info.length > 0) {
-            setDeviceInfo(info.join(", "));
-          }
-        } catch (e) {
-          console.error(e);
-          setDeviceInfo("Device information not available");
+        if (allStartFunctions.length > 0) {
+          setStartNotifications(() => combinedStartNotifications);
+        }
+        if (allStopFunctions.length > 0) {
+          setStopNotifications(() => combinedStopNotifications);
+        }
+        if (allWriteValueFunctions.length > 0) {
+          setWriteValueFunction(() => combinedWriteValue);
         }
 
-        // Listen for disconnection
-        deviceInfo.device.addEventListener("gattserverdisconnected", () => {
-          setConnectedDevice(null);
-          setDeviceInfo(null);
-          setStartNotifications(null);
-          setStopNotifications(null);
-          setError("Device disconnected");
-        });
-
-        return {
-          startNotifications:
-            notificationFunctions.startNotifications || (() => {}),
-          stopNotifications:
-            notificationFunctions.stopNotifications || (() => {}),
-        };
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(`Connection failed: ${err.message}`);
-        } else {
-          setError("Failed to connect to device");
-        }
-        return {
-          startNotifications: () => {},
-          stopNotifications: () => {},
-        };
+        // Store individual functions for return value
+        notificationFunctions.startNotifications = combinedStartNotifications;
+        notificationFunctions.stopNotifications = combinedStopNotifications;
+        notificationFunctions.writeValue = combinedWriteValue;
+          // if (info.length > 0) {
+          //   setDeviceInfo(info.join(", "));
+          // }
+      } catch (e) {
+        console.log(e);
+        setDeviceInfo("Device information not available");
       }
+
+      // Listen for disconnection
+      deviceInfo.device.addEventListener("gattserverdisconnected", () => {
+        setConnectedDevice(null);
+        setDeviceInfo(null);
+        setStartNotifications(null);
+        setStopNotifications(null);
+        setError("Device disconnected");
+      });
+
+      return {
+        startNotifications:
+          notificationFunctions.startNotifications || (() => {}),
+        stopNotifications:
+          notificationFunctions.stopNotifications || (() => {}),
+        writeValue: notificationFunctions.writeValue || (() => {}),
+      };
     },
-    []
+    [setupCadenceNotifications, setupPowerNotifications, setupHeartRateNotifications, setupFTMNotifications, setupControlPointNotifications]
   );
+
+  const setTrainerTargetPower = useCallback(async (power: number) => {
+    console.log('setTrainerTargetPower', power);
+    if (writeValueFunction) {
+      console.log('writeValueFunction', writeValueFunction);
+      try{
+        const data = new Uint8Array(3);
+        data[0] = 0x05;
+        data[1] = power & 0xFF;
+        data[2] = (power >> 8) & 0xFF;
+        await writeValueFunction(data);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        console.log('error setting target power', error);
+      }
+    }
+  }, [writeValueFunction]);
 
   const disconnectDevice = useCallback(() => {
     if (connectedDevice?.device.gatt?.connected) {
@@ -420,6 +732,7 @@ export function useBluetooth() {
     setDeviceInfo(null);
     setStartNotifications(null);
     setStopNotifications(null);
+    setWriteValueFunction(null);
     setError(null);
   }, [connectedDevice]);
 
@@ -436,9 +749,11 @@ export function useBluetooth() {
     historicalPowerData,
     historicalCadenceData,
     historicalHeartRateData,
+    cadenceSource,
     startTimestamp,
     startNotifications,
     stopNotifications,
+    setTrainerTargetPower,
     checkSupport,
     scanForDevices,
     connectToDevice,

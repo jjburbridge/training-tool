@@ -46,7 +46,6 @@ export default function RootLayout({
                   flexDirection: "column",
                 }}
               >
-                <PowerDisplayWrapper />
                 <main style={{ flex: 1 }}>{children}</main>
               </div>
             </div>

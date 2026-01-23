@@ -17,8 +17,10 @@ interface BluetoothContextType {
   historicalPowerData: number[];
   historicalCadenceData: number[];
   historicalHeartRateData: number[];
+  cadenceSource: string | null;
   startNotifications: (() => void) | null;
   stopNotifications: (() => void) | null;
+  setTrainerTargetPower: (power: number) => Promise<void>;
   checkSupport: () => void;
   scanForDevices: () => Promise<void>;
   connectToDevice: (device: DeviceInfo) => Promise<{

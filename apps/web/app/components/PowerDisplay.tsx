@@ -29,7 +29,7 @@ export function PowerDisplay({
   startTime,
   ftp = 250,
 }: PowerDisplayProps) {
-  const { power, connectedDevice } = useBluetoothContext();
+  const { power, connectedDevice, setTrainerTargetPower } = useBluetoothContext();
   const [targetPower, setTargetPower] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,10 +39,15 @@ export function PowerDisplay({
     }
 
     const updateTargetPower = () => {
+      console.log('updateTargetPower');
       const now = Date.now();
       const elapsedMinutes = (now - startTime) / 1000 / 60;
       const target = getTargetPowerForTime(segments, elapsedMinutes, ftp);
       setTargetPower(target);
+      console.log('target', target);
+      if (target) {
+        setTrainerTargetPower(target);
+      }
     };
 
     // Update immediately

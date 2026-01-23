@@ -1,3 +1,5 @@
+import React from "react";
+
 interface WorkoutSegment {
   segmentType: string;
   duration: {
@@ -19,6 +21,7 @@ interface WorkoutProfileGraphProps {
   historicalHeartRateData?: number[];
   startTime?: number | null;
   ftp?: number;
+  currentTime?: number; // Current elapsed time in seconds
 }
 
 function getIntensityColor(intensity: number): string {
@@ -79,6 +82,7 @@ export function WorkoutProfileGraph({
   historicalHeartRateData = [],
   startTime = null,
   ftp = 250,
+  currentTime = 0,
 }: WorkoutProfileGraphProps) {
   // Expand segments with repetitions
   const expandedSegments: Array<{
@@ -119,44 +123,64 @@ export function WorkoutProfileGraph({
     100
   );
 
-  const barHeight = 200;
-  const barWidth = 800;
+  const barHeight = 300;
+  const barWidth = 1000;
+  const padding = { top: 20, right: 40, bottom: 40, left: 60 };
+  const graphWidth = barWidth - padding.left - padding.right;
+  const graphHeight = barHeight - padding.top - padding.bottom;
+
+  // Calculate max power in watts for Y-axis
+  const maxPower = Math.max(
+    ...expandedSegments.map((s) => (s.intensity / 100) * ftp),
+    ...(historicalPowerData.length > 0 ? historicalPowerData : [ftp * 1.5]),
+    ftp * 1.5
+  );
+
+  // Calculate current position in workout
+  const currentPosition = totalDuration > 0 
+    ? Math.min((currentTime / 60) / totalDuration, 1) 
+    : 0;
+  const currentX = padding.left + currentPosition * graphWidth;
+
+  // Format time for X-axis
+  const formatTimeAxis = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    const secs = Math.floor((minutes % 1) * 60);
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
-    <div style={{ marginTop: "2rem" }}>
-      <h2
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: 600,
-          marginBottom: "1rem",
-        }}
+    <div
+      style={{
+        padding: "1rem",
+        borderRadius: "8px",
+        backgroundColor: "var(--gray-alpha-100)",
+        border: "1px solid var(--gray-alpha-200)",
+      }}
+    >
+      <svg
+        width="100%"
+        height={barHeight + 60}
+        viewBox={`0 0 ${barWidth} ${barHeight + 60}`}
+        style={{ overflow: "visible" }}
       >
-        Workout Profile
-      </h2>
-      <div
-        style={{
-          padding: "1.5rem",
-          borderRadius: "8px",
-          backgroundColor: "var(--gray-alpha-100)",
-          border: "1px solid var(--gray-alpha-200)",
-        }}
-      >
-        <svg
-          width="100%"
-          height={barHeight + 40}
-          viewBox={`0 0 ${barWidth} ${barHeight + 40}`}
-          style={{ overflow: "visible" }}
-        >
+          {/* Target power profile - blue shaded area */}
           {expandedSegments.map((expandedSegment, index) => {
             const previousWidth = expandedSegments
               .slice(0, index)
               .reduce((sum, s) => sum + s.durationMinutes, 0);
-            const x = (previousWidth / totalDuration) * barWidth;
+            const x = padding.left + (previousWidth / totalDuration) * graphWidth;
             const width =
-              (expandedSegment.durationMinutes / totalDuration) * barWidth;
-            const height =
-              (expandedSegment.intensity / maxIntensity) * barHeight;
-            const y = barHeight - height;
+              (expandedSegment.durationMinutes / totalDuration) * graphWidth;
+            
+            // Calculate power in watts
+            const powerWatts = (expandedSegment.intensity / 100) * ftp;
+            const height = (powerWatts / maxPower) * graphHeight;
+            const y = padding.top + graphHeight - height;
 
             // For ramp segments, create multiple segments with zone colors
             const isRamp =
@@ -168,9 +192,10 @@ export function WorkoutProfileGraph({
                 expandedSegment.segment.powerTarget.initialPercentFTP || 0;
               const finalIntensity =
                 expandedSegment.segment.powerTarget.finalPercentFTP || 0;
-              const initialHeight =
-                (initialIntensity / maxIntensity) * barHeight;
-              const finalHeight = (finalIntensity / maxIntensity) * barHeight;
+              const initialPower = (initialIntensity / 100) * ftp;
+              const finalPower = (finalIntensity / 100) * ftp;
+              const initialHeight = (initialPower / maxPower) * graphHeight;
+              const finalHeight = (finalPower / maxPower) * graphHeight;
 
               // Divide the ramp into segments to show zone transitions
               const numSegments = Math.max(20, Math.ceil(width / 5)); // At least 20 segments or one per 5px
@@ -191,19 +216,21 @@ export function WorkoutProfileGraph({
                 // Get the color for this intensity (zone-based)
                 const segmentColor = getIntensityColor(currentIntensity);
 
-                // Calculate heights
-                const currentHeight =
-                  (currentIntensity / maxIntensity) * barHeight;
-                const nextHeight = (nextIntensity / maxIntensity) * barHeight;
+                // Calculate heights in watts
+                const currentPower = (currentIntensity / 100) * ftp;
+                const nextPower = (nextIntensity / 100) * ftp;
+                const currentHeight = (currentPower / maxPower) * graphHeight;
+                const nextHeight = (nextPower / maxPower) * graphHeight;
 
                 // Calculate positions
                 const segmentX = x + segmentProgress * width;
                 const segmentWidth = width / numSegments;
-                const segmentStartY = barHeight - currentHeight;
-                const segmentEndY = barHeight - nextHeight;
+                const segmentStartY = padding.top + graphHeight - currentHeight;
+                const segmentEndY = padding.top + graphHeight - nextHeight;
 
                 // Create polygon for this segment
-                const points = `${segmentX},${barHeight} ${segmentX + segmentWidth},${barHeight} ${segmentX + segmentWidth},${segmentEndY} ${segmentX},${segmentStartY}`;
+                const baseY = padding.top + graphHeight;
+                const points = `${segmentX},${baseY} ${segmentX + segmentWidth},${baseY} ${segmentX + segmentWidth},${segmentEndY} ${segmentX},${segmentStartY}`;
 
                 segments.push(
                   <polygon
@@ -224,227 +251,188 @@ export function WorkoutProfileGraph({
                 y={y}
                 width={width}
                 height={height}
-                fill={expandedSegment.color}
+                fill="#3b82f6"
+                opacity="0.3"
                 rx="2"
               />
             );
           })}
 
-          {/* X-axis labels */}
+          {/* X-axis line */}
           <line
-            x1="0"
-            y1={barHeight}
-            x2={barWidth}
-            y2={barHeight}
-            stroke="var(--gray-alpha-300)"
+            x1={padding.left}
+            y1={padding.top + graphHeight}
+            x2={padding.left + graphWidth}
+            y2={padding.top + graphHeight}
+            stroke="var(--gray-alpha-400)"
             strokeWidth="2"
           />
 
-          {/* Time markers */}
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-            const x = ratio * barWidth;
-            const time = Math.round(totalDuration * ratio);
+          {/* Y-axis line */}
+          <line
+            x1={padding.left}
+            y1={padding.top}
+            x2={padding.left}
+            y2={padding.top + graphHeight}
+            stroke="var(--gray-alpha-400)"
+            strokeWidth="2"
+          />
+
+          {/* Time markers on X-axis */}
+          {[0, 0.2, 0.4, 0.6, 0.8, 1].map((ratio) => {
+            const x = padding.left + ratio * graphWidth;
+            const timeMinutes = totalDuration * ratio;
             return (
               <g key={ratio}>
                 <line
                   x1={x}
-                  y1={barHeight}
+                  y1={padding.top + graphHeight}
                   x2={x}
-                  y2={barHeight + 5}
-                  stroke="var(--gray-alpha-400)"
+                  y2={padding.top + graphHeight + 5}
+                  stroke="var(--gray-alpha-500)"
                   strokeWidth="1"
                 />
                 <text
                   x={x}
-                  y={barHeight + 20}
-                  fontSize="12"
+                  y={padding.top + graphHeight + 20}
+                  fontSize="11"
                   fill="var(--foreground)"
                   textAnchor="middle"
                 >
-                  {time}m
+                  {formatTimeAxis(timeMinutes)}
                 </text>
               </g>
             );
           })}
 
-          {/* Historical data overlay */}
+          {/* Power markers on Y-axis */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = padding.top + graphHeight - ratio * graphHeight;
+            const power = Math.round(maxPower * ratio);
+            return (
+              <g key={ratio}>
+                <line
+                  x1={padding.left}
+                  y1={y}
+                  x2={padding.left - 5}
+                  y2={y}
+                  stroke="var(--gray-alpha-500)"
+                  strokeWidth="1"
+                />
+                <text
+                  x={padding.left - 10}
+                  y={y + 4}
+                  fontSize="11"
+                  fill="var(--foreground)"
+                  textAnchor="end"
+                >
+                  {power}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Actual power data - yellow vertical spikes */}
           {historicalPowerData.length > 0 && (
             <g>
-              {/* Calculate time scale for historical data */}
-              {(() => {
-                const dataPoints: Array<{
-                  x: number;
-                  y: number;
-                  power: number;
-                }> = [];
+              {historicalPowerData.map((power, index) => {
+                // Calculate time position - assume 1 reading per second
+                const timePosition = Math.min(
+                  (index / 60) / totalDuration,
+                  1
+                );
+                if (timePosition > 1 || timePosition < 0) return null;
 
-                // Calculate elapsed time if we have a start time
-                const now = Date.now();
-                const elapsedSeconds = startTime
-                  ? (now - startTime) / 1000
-                  : historicalPowerData.length; // Fallback: assume 1 reading per second
-                const elapsedMinutes = elapsedSeconds / 60;
-
-                // Sample data points - show one point every few seconds to avoid clutter
-                const sampleInterval = Math.max(
-                  1,
-                  Math.floor(historicalPowerData.length / 200)
-                ); // Max 200 points
-
-                historicalPowerData.forEach((power, index) => {
-                  // Only sample every Nth point to avoid too many points
-                  if (
-                    index % sampleInterval !== 0 &&
-                    index !== historicalPowerData.length - 1
-                  ) {
-                    return;
-                  }
-
-                  // Calculate time position based on elapsed time
-                  // Each data point represents approximately 1 second of elapsed time
-                  const timePosition = startTime
-                    ? Math.min(index / 60 / totalDuration, 1)
-                    : Math.min(index / 60 / totalDuration, 1);
-
-                  if (timePosition <= 1 && timePosition >= 0) {
-                    const x = timePosition * barWidth;
-                    // Convert power to percentage of FTP for comparison with workout targets
-                    const powerPercent = (power / ftp) * 100;
-                    const height = Math.max(
-                      0,
-                      (powerPercent / maxIntensity) * barHeight
-                    );
-                    const y = barHeight - height;
-                    dataPoints.push({ x, y, power });
-                  }
-                });
-
-                if (dataPoints.length === 0) return null;
-
-                // Create path for the line
-                const pathData =
-                  dataPoints.length === 1
-                    ? `M ${dataPoints[0]!.x} ${dataPoints[0]!.y}`
-                    : dataPoints
-                        .map(
-                          (point, index) =>
-                            `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`
-                        )
-                        .join(" ");
+                const x = padding.left + timePosition * graphWidth;
+                const height = (power / maxPower) * graphHeight;
+                const y = padding.top + graphHeight - height;
 
                 return (
-                  <>
-                    {/* Line for historical data - red to show actual vs target */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke="#ef4444"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity="0.8"
-                    />
-                    {/* Data points - show every 20th point to avoid clutter */}
-                    {dataPoints
-                      .filter(
-                        (_, index) =>
-                          index % 20 === 0 || index === dataPoints.length - 1
-                      )
-                      .map((point, index) => (
-                        <circle
-                          key={index}
-                          cx={point.x}
-                          cy={point.y}
-                          r="2.5"
-                          fill="#ef4444"
-                          opacity="0.9"
-                        />
-                      ))}
-                  </>
+                  <line
+                    key={index}
+                    x1={x}
+                    y1={padding.top + graphHeight}
+                    x2={x}
+                    y2={y}
+                    stroke="#fbbf24"
+                    strokeWidth="2"
+                    opacity="0.8"
+                  />
+                );
+              })}
+            </g>
+          )}
+
+          {/* Heart rate line - red overlay */}
+          {historicalHeartRateData.length > 0 && (
+            <g>
+              {(() => {
+                const hrPoints: Array<{ x: number; y: number }> = [];
+                const maxHR = Math.max(...historicalHeartRateData, 200);
+                const minHR = Math.min(...historicalHeartRateData, 50);
+
+                historicalHeartRateData.forEach((hr, index) => {
+                  const timePosition = Math.min(
+                    (index / 60) / totalDuration,
+                    1
+                  );
+                  if (timePosition > 1 || timePosition < 0) return;
+
+                  const x = padding.left + timePosition * graphWidth;
+                  // Map HR to graph height (using a portion of the graph)
+                  const hrNormalized = (hr - minHR) / (maxHR - minHR);
+                  const y = padding.top + graphHeight - hrNormalized * graphHeight * 0.6; // Use 60% of graph height for HR
+                  hrPoints.push({ x, y });
+                });
+
+                if (hrPoints.length === 0) return null;
+
+                const pathData = hrPoints
+                  .map(
+                    (point, index) =>
+                      `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`
+                  )
+                  .join(" ");
+
+                return (
+                  <path
+                    d={pathData}
+                    fill="none"
+                    stroke="#ef4444"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.7"
+                  />
                 );
               })()}
             </g>
           )}
-        </svg>
 
-        {/* Legend */}
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            marginTop: "1rem",
-            flexWrap: "wrap",
-            fontSize: "0.875rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                backgroundColor: "#9ca3af",
-                borderRadius: "2px",
-              }}
+          {/* Current progress line - yellow vertical line */}
+          {currentTime > 0 && (
+            <line
+              x1={currentX}
+              y1={padding.top}
+              x2={currentX}
+              y2={padding.top + graphHeight}
+              stroke="#fbbf24"
+              strokeWidth="3"
+              opacity="0.9"
             />
-            <span>Z1 (&lt;55% FTP)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                backgroundColor: "#3b82f6",
-                borderRadius: "2px",
-              }}
-            />
-            <span>Z2 (55-75% FTP)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                backgroundColor: "#10b981",
-                borderRadius: "2px",
-              }}
-            />
-            <span>Z3 (75-90% FTP)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                backgroundColor: "#fbbf24",
-                borderRadius: "2px",
-              }}
-            />
-            <span>Z4 (90-105% FTP)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                backgroundColor: "#f97316",
-                borderRadius: "2px",
-              }}
-            />
-            <span>Z5 (105-120% FTP)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                backgroundColor: "#ef4444",
-                borderRadius: "2px",
-              }}
-            />
-            <span>Z6 (&gt;120% FTP)</span>
-          </div>
-        </div>
+          )}
+
+          {/* FTP label */}
+          <text
+            x={barWidth - padding.right}
+            y={padding.top + graphHeight - (ftp / maxPower) * graphHeight}
+            fontSize="11"
+            fill="var(--gray-alpha-600)"
+            textAnchor="end"
+          >
+            FTP {ftp}
+          </text>
+        </svg>
       </div>
-    </div>
   );
 }

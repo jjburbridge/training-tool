@@ -19,14 +19,14 @@ export default defineConfig({
     file: {
       assetSources: (previousAssetSources: AssetSource[]) => {
         return previousAssetSources.filter(
-          (assetSource) => assetSource !== mediaAssetSource
+          (assetSource) => assetSource !== mediaAssetSource,
         );
       },
     },
     image: {
       assetSources: (previousAssetSources: AssetSource[]) => {
         return previousAssetSources.filter(
-          (assetSource) => assetSource === mediaAssetSource
+          (assetSource) => assetSource === mediaAssetSource,
         );
       },
     },

@@ -538,7 +538,7 @@ export function useBluetooth() {
         startNotifications: () => {
           controlPointChar.startNotifications().catch(console.error);
         },
-        writeValue: (value: Uint8Array) => {
+        writeValue: (value: Uint8Array<ArrayBuffer>) => {
           controlPointChar.writeValue(value).catch(console.error);
         },
       };

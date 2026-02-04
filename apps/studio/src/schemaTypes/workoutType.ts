@@ -49,7 +49,9 @@ export const workoutType = defineType({
       group: "details",
       description: "Brief description of the workout",
       validation: (rule) =>
-        rule.max(300).warning("Description should be concise, under 300 characters"),
+        rule
+          .max(300)
+          .warning("Description should be concise, under 300 characters"),
     }),
     defineField({
       name: "workoutType",
@@ -85,7 +87,8 @@ export const workoutType = defineType({
         layout: "radio",
       },
       initialValue: "intermediate",
-      validation: (rule) => rule.required().error("Difficulty level is required"),
+      validation: (rule) =>
+        rule.required().error("Difficulty level is required"),
     }),
     defineField({
       name: "segments",
@@ -194,9 +197,18 @@ export const workoutType = defineType({
       durationUnit: "totalDuration.unit",
       status: "status",
     },
-    prepare({ title, workoutType, difficulty, duration, durationUnit, status }) {
+    prepare({
+      title,
+      workoutType,
+      difficulty,
+      duration,
+      durationUnit,
+      status,
+    }) {
       const durationText =
-        duration && durationUnit ? `${duration} ${durationUnit}` : "No duration";
+        duration && durationUnit
+          ? `${duration} ${durationUnit}`
+          : "No duration";
       return {
         title,
         subtitle: `${workoutType || "No type"} • ${difficulty || "No difficulty"} • ${durationText}${status ? ` • ${status}` : ""}`,
@@ -204,4 +216,3 @@ export const workoutType = defineType({
     },
   },
 });
-

@@ -41,6 +41,7 @@ interface BluetoothRemoteGATTService extends EventTarget {
 }
 
 interface BluetoothRemoteGATTCharacteristic extends EventTarget {
+  [x: string]: any;
   readonly service: BluetoothRemoteGATTService;
   readonly uuid: string;
   readonly properties: BluetoothCharacteristicProperties;

@@ -56,19 +56,25 @@ const getSystemPrompt = () => {
 - Use get_page_context to see what page the user is on (URL, title, headings, links). Call it when relevant to tailor your response—e.g. when recommending alternatives to the workout they're viewing, or when they ask "what's on this page".`;
 };
 
-function buildSystemPrompt(props: {template: string; userContext: UserContext}) {
-  const {template, userContext} = props
+function buildSystemPrompt(props: {
+  template: string;
+  userContext: UserContext;
+}) {
+  const { template, userContext } = props;
 
   const vars: Record<string, string> = {
     documentTitle: userContext.documentTitle,
     documentLocation: userContext.documentLocation,
-  }
+  };
 
-  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => vars[key] ?? '')
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => vars[key] ?? "");
 }
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const {
+    messages,
+    userContext,
+  }: { messages: UIMessage[]; userContext: UserContext } = await req.json();
 
   if (!process.env.SANITY_CONTEXT_MCP_URL) {
     throw new Error(
@@ -92,7 +98,7 @@ export async function POST(req: Request) {
   const systemPrompt = buildSystemPrompt({
     template: getSystemPrompt(),
     userContext,
-  })
+  });
 
   const mcpTools = await mcpClient.tools();
 

@@ -3,10 +3,14 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@ai-sdk/react";
-import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
-import { useState } from "react";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
+import { useEffect, useRef, useState } from "react";
 import { CLIENT_TOOLS } from "../lib/chatbot/clientTools";
-import { getPageContext } from "../lib/chatbot/getPageContext";
+import {
+  capturePageContext,
+  captureScreenshot,
+  captureUserContext,
+} from "../lib/chatbot/getPageContext";
 
 function getTextFromNode(node: React.ReactNode): string {
   if (typeof node === "string") return node;
@@ -103,9 +107,7 @@ function MarkdownMessage({ content }: { content: string }) {
   return (
     <ReactMarkdown
       components={{
-        p: ({ children }) => (
-          <p style={markdownStyles.p}>{children}</p>
-        ),
+        p: ({ children }) => <p style={markdownStyles.p}>{children}</p>,
         strong: ({ children }) => (
           <strong style={markdownStyles.strong}>{children}</strong>
         ),
@@ -165,24 +167,72 @@ export function Chat() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
 
-  const { messages, sendMessage, status, error, stop, addToolOutput } =
-    useChat({
+  const pendingScreenshotRef = useRef<string | null>(null);
+
+  const { messages, sendMessage, status, error, stop, addToolOutput } = useChat(
+    {
+      transport: new DefaultChatTransport({
+        body: () => ({userContext: captureUserContext()}),
+      }),
       sendAutomaticallyWhen: ({ messages }) =>
         lastAssistantMessageIsCompleteWithToolCalls({ messages }),
       onToolCall: async ({ toolCall }) => {
         if (toolCall.dynamic) return;
-        if (toolCall.toolName === CLIENT_TOOLS.PAGE_CONTEXT) {
-          const context = getPageContext();
-          addToolOutput({
-            tool: CLIENT_TOOLS.PAGE_CONTEXT,
-            toolCallId: toolCall.toolCallId,
-            output: context,
-          });
+        switch (toolCall.toolName) {
+          case CLIENT_TOOLS.PAGE_CONTEXT: {
+            addToolOutput({
+              tool: CLIENT_TOOLS.PAGE_CONTEXT,
+              toolCallId: toolCall.toolCallId,
+              output: capturePageContext(),
+            });
+            return;
+          }
+
+          case CLIENT_TOOLS.SCREENSHOT: {
+            try {
+              const file = await captureScreenshot();
+
+              pendingScreenshotRef.current = file;
+
+              addToolOutput({
+                tool: CLIENT_TOOLS.SCREENSHOT,
+                toolCallId: toolCall.toolCallId,
+                output: `Screenshot captured.`,
+              });
+            } catch (err) {
+              addToolOutput({
+                tool: CLIENT_TOOLS.SCREENSHOT,
+                toolCallId: toolCall.toolCallId,
+                output: `Failed to capture screenshot: ${err instanceof Error ? err.message : String(err)}`,
+              });
+            }
+
+            return;
+          }
         }
       },
-    });
+    },
+  );
 
   const isLoading = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    if (status !== 'ready' || !pendingScreenshotRef.current) return
+
+    const screenshot = pendingScreenshotRef.current
+    pendingScreenshotRef.current = null
+
+    sendMessage({
+      files: [
+        {
+          type: 'file' as const,
+          filename: 'screenshot.jpg',
+          mediaType: 'image/jpeg',
+          url: screenshot,
+        },
+      ],
+    })
+  }, [status, sendMessage])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,10 +358,7 @@ export function Chat() {
                 <div style={{ overflowWrap: "break-word" }}>
                   {message.parts?.map((part, i) =>
                     part.type === "text" ? (
-                      <MarkdownMessage
-                        key={i}
-                        content={part.text}
-                      />
+                      <MarkdownMessage key={i} content={part.text} />
                     ) : null,
                   )}
                 </div>

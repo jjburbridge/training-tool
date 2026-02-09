@@ -32,6 +32,7 @@ export function DeviceList({ devices, onConnect }: DeviceListProps) {
           fontSize: "1.25rem",
           fontWeight: 600,
           marginBottom: "1rem",
+          color: "var(--sanity-foreground)",
         }}
       >
         Available Devices

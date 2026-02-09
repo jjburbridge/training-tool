@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useBluetoothContext } from "../contexts/BluetoothContext";
 import { useFTPContext } from "../contexts/FTPContext";
 import { ErrorMessage } from "./ErrorMessage";
@@ -43,8 +44,8 @@ export function Sidebar() {
       style={{
         width: "320px",
         minHeight: "100vh",
-        backgroundColor: "var(--gray-alpha-100)",
-        borderRight: "1px solid var(--gray-alpha-200)",
+        backgroundColor: "var(--sanity-bg-elevated)",
+        borderRight: "1px solid var(--sanity-border)",
         padding: "1.5rem",
         overflowY: "auto",
         position: "sticky",
@@ -56,19 +57,61 @@ export function Sidebar() {
         style={{
           fontSize: "1.25rem",
           fontWeight: 600,
+          marginBottom: "1rem",
+          color: "var(--sanity-foreground)",
+        }}
+      >
+        Training Tool
+      </h2>
+
+      <nav
+        style={{
           marginBottom: "1.5rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.25rem",
+        }}
+      >
+        <Link
+          href="/"
+          className={styles.navLink}
+        >
+          Home
+        </Link>
+        <Link
+          href="/workouts"
+          className={styles.navLink}
+        >
+          Workouts
+        </Link>
+        <Link
+          href="/workout-plans"
+          className={styles.navLink}
+        >
+          Workout Plans
+        </Link>
+      </nav>
+
+      <h3
+        style={{
+          fontSize: "0.7rem",
+          fontWeight: 500,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: "1rem",
+          color: "var(--sanity-accent)",
         }}
       >
         Power Meter
-      </h2>
+      </h3>
 
       <div
         style={{
           marginBottom: "1.5rem",
           padding: "1rem",
           borderRadius: "8px",
-          backgroundColor: "var(--background)",
-          border: "1px solid var(--gray-alpha-200)",
+          backgroundColor: "var(--sanity-bg)",
+          border: "1px solid var(--sanity-border)",
         }}
       >
         <label
@@ -78,7 +121,7 @@ export function Sidebar() {
             fontSize: "0.875rem",
             fontWeight: 600,
             marginBottom: "0.5rem",
-            color: "var(--foreground)",
+            color: "var(--sanity-foreground)",
           }}
         >
           Functional Threshold Power (FTP)
@@ -113,17 +156,17 @@ export function Sidebar() {
             style={{
               flex: 1,
               padding: "0.5rem",
-              borderRadius: "4px",
-              border: "1px solid var(--gray-alpha-300)",
-              backgroundColor: "var(--background)",
-              color: "var(--foreground)",
+              borderRadius: "6px",
+              border: "1px solid var(--sanity-border-strong)",
+              backgroundColor: "var(--sanity-bg)",
+              color: "var(--sanity-foreground)",
               fontSize: "1rem",
             }}
           />
           <span
             style={{
               padding: "0.5rem",
-              color: "var(--gray-alpha-700)",
+              color: "var(--sanity-foreground-muted)",
               fontSize: "0.875rem",
             }}
           >
@@ -133,7 +176,7 @@ export function Sidebar() {
         <p
           style={{
             fontSize: "0.75rem",
-            color: "var(--gray-alpha-600)",
+            color: "var(--sanity-foreground-muted)",
             marginTop: "0.25rem",
             marginBottom: 0,
           }}

@@ -231,8 +231,8 @@ export function WorkoutDisplay({
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "var(--background)",
-        color: "var(--foreground)",
+        backgroundColor: "var(--sanity-bg)",
+        color: "var(--sanity-foreground)",
         padding: "1rem",
         maxWidth: "100%",
       }}
@@ -241,13 +241,13 @@ export function WorkoutDisplay({
       {!connectedDevice && (
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
-            border: "1px solid var(--gray-alpha-200)",
+            backgroundColor: "var(--sanity-bg-muted)",
+            border: "1px solid var(--sanity-border)",
             borderRadius: "8px",
             padding: "1rem",
             marginBottom: "1rem",
             textAlign: "center",
-            color: "var(--gray-alpha-700)",
+            color: "var(--sanity-foreground-muted)",
           }}
         >
           Connect a device to start tracking your workout metrics
@@ -267,6 +267,7 @@ export function WorkoutDisplay({
             fontSize: "1.5rem",
             fontWeight: 600,
             margin: 0,
+            color: "var(--sanity-foreground)",
           }}
         >
           {workoutTitle}
@@ -277,7 +278,7 @@ export function WorkoutDisplay({
             style={{
               background: "none",
               border: "none",
-              color: "var(--foreground)",
+              color: "var(--sanity-foreground)",
               cursor: "pointer",
               fontSize: "1.5rem",
               padding: "0.5rem",
@@ -301,16 +302,16 @@ export function WorkoutDisplay({
         {/* POWER */}
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
+            backgroundColor: "var(--sanity-bg-elevated)",
             borderRadius: "12px",
             padding: "1rem",
-            border: "1px solid var(--gray-alpha-200)",
+            border: "1px solid var(--sanity-border)",
           }}
         >
           <div
             style={{
               fontSize: "0.75rem",
-              color: "var(--gray-alpha-600)",
+              color: "var(--sanity-foreground-muted)",
               marginBottom: "0.5rem",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -333,7 +334,7 @@ export function WorkoutDisplay({
                 style={{
                   width: "100%",
                   height: "8px",
-                  backgroundColor: "var(--gray-alpha-200)",
+                  backgroundColor: "var(--sanity-bg-muted)",
                   borderRadius: "4px",
                   position: "relative",
                   overflow: "hidden",
@@ -343,7 +344,7 @@ export function WorkoutDisplay({
                   style={{
                     width: `${powerBarPercentage}%`,
                     height: "100%",
-                    backgroundColor: powerBarPercentage >= 95 && powerBarPercentage <= 105 ? "#10b981" : powerBarPercentage > 105 ? "#f97316" : "#3b82f6",
+                    backgroundColor: powerBarPercentage >= 95 && powerBarPercentage <= 105 ? "var(--sanity-accent)" : powerBarPercentage > 105 ? "var(--sanity-orange)" : "#3b82f6",
                     borderRadius: "4px",
                     transition: "width 0.3s ease",
                   }}
@@ -356,7 +357,7 @@ export function WorkoutDisplay({
                     transform: "translate(-50%, -50%)",
                     width: "2px",
                     height: "12px",
-                    backgroundColor: "white",
+                    backgroundColor: "var(--sanity-foreground)",
                     borderRadius: "1px",
                   }}
                 />
@@ -368,16 +369,16 @@ export function WorkoutDisplay({
         {/* INTERVAL TIME */}
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
+            backgroundColor: "var(--sanity-bg-elevated)",
             borderRadius: "12px",
             padding: "1rem",
-            border: "1px solid var(--gray-alpha-200)",
+            border: "1px solid var(--sanity-border)",
           }}
         >
           <div
             style={{
               fontSize: "0.75rem",
-              color: "var(--gray-alpha-600)",
+              color: "var(--sanity-foreground-muted)",
               marginBottom: "0.5rem",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -398,16 +399,16 @@ export function WorkoutDisplay({
         {/* HEART RATE */}
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
+            backgroundColor: "var(--sanity-bg-elevated)",
             borderRadius: "12px",
             padding: "1rem",
-            border: "1px solid var(--gray-alpha-200)",
+            border: "1px solid var(--sanity-border)",
           }}
         >
           <div
             style={{
               fontSize: "0.75rem",
-              color: "var(--gray-alpha-600)",
+              color: "var(--sanity-foreground-muted)",
               marginBottom: "0.5rem",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -428,16 +429,16 @@ export function WorkoutDisplay({
         {/* TARGET */}
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
+            backgroundColor: "var(--sanity-bg-elevated)",
             borderRadius: "12px",
             padding: "1rem",
-            border: "1px solid var(--gray-alpha-200)",
+            border: "1px solid var(--sanity-border)",
           }}
         >
           <div
             style={{
               fontSize: "0.75rem",
-              color: "var(--gray-alpha-600)",
+              color: "var(--sanity-foreground-muted)",
               marginBottom: "0.5rem",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -458,16 +459,16 @@ export function WorkoutDisplay({
         {/* TOTAL TIME */}
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
+            backgroundColor: "var(--sanity-bg-elevated)",
             borderRadius: "12px",
             padding: "1rem",
-            border: "1px solid var(--gray-alpha-200)",
+            border: "1px solid var(--sanity-border)",
           }}
         >
           <div
             style={{
               fontSize: "0.75rem",
-              color: "var(--gray-alpha-600)",
+              color: "var(--sanity-foreground-muted)",
               marginBottom: "0.5rem",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -488,16 +489,16 @@ export function WorkoutDisplay({
         {/* CADENCE */}
         <div
           style={{
-            backgroundColor: "var(--gray-alpha-100)",
+            backgroundColor: "var(--sanity-bg-elevated)",
             borderRadius: "12px",
             padding: "1rem",
-            border: "1px solid var(--gray-alpha-200)",
+            border: "1px solid var(--sanity-border)",
           }}
         >
           <div
             style={{
               fontSize: "0.75rem",
-              color: "var(--gray-alpha-600)",
+              color: "var(--sanity-foreground-muted)",
               marginBottom: "0.5rem",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -523,7 +524,7 @@ export function WorkoutDisplay({
             textAlign: "center",
             marginBottom: "1.5rem",
             fontSize: "0.875rem",
-            color: "var(--gray-alpha-600)",
+            color: "var(--sanity-foreground-muted)",
           }}
         >
           END TIME: {endTime}
@@ -550,16 +551,16 @@ export function WorkoutDisplay({
           justifyContent: "space-between",
           alignItems: "center",
           padding: "1rem 0.5rem",
-          borderTop: "1px solid var(--gray-alpha-200)",
+          borderTop: "1px solid var(--sanity-border)",
         }}
       >
-        <div style={{ fontSize: "0.875rem" }}>
+        <div style={{ fontSize: "0.875rem", color: "var(--sanity-foreground)" }}>
           INTENSITY{" "}
           <span style={{ fontWeight: 600 }}>
             {Math.round(intensityPercentage)}%
           </span>
         </div>
-        <div style={{ fontSize: "0.875rem", color: "#10b981" }}>
+        <div style={{ fontSize: "0.875rem", color: "var(--sanity-accent)" }}>
           DEVICES{" "}
           <span style={{ fontWeight: 600 }}>
             {connectedDevice ? "1 Paired" : "0 Paired"}

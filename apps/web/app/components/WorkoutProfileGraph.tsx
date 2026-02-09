@@ -158,8 +158,8 @@ export function WorkoutProfileGraph({
       style={{
         padding: "1rem",
         borderRadius: "8px",
-        backgroundColor: "var(--gray-alpha-100)",
-        border: "1px solid var(--gray-alpha-200)",
+        backgroundColor: "var(--sanity-bg-elevated)",
+        border: "1px solid var(--sanity-border)",
       }}
     >
       <svg

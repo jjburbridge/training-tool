@@ -1,186 +1,306 @@
-.page {
-  --gray-rgb: 0, 0, 0;
-  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
-  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
+/* Sanity-inspired home page - dark theme */
 
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-
-  display: grid;
-  grid-template-rows: 20px 1fr 20px;
-  align-items: center;
-  justify-items: center;
-  min-height: 100svh;
-  padding: 80px;
-  gap: 64px;
-  font-synthesis: none;
+.homePage {
+  min-height: 100%;
+  background: var(--sanity-bg);
+  color: var(--sanity-foreground);
 }
 
-@media (prefers-color-scheme: dark) {
-  .page {
-    --gray-rgb: 255, 255, 255;
-    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
-    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-  }
+.hero {
+  padding: 4rem 2rem 3rem;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
 }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  grid-row-start: 2;
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(132, 204, 22, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(132, 204, 22, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
 }
 
-.main ol {
-  font-family: var(--font-geist-mono);
-  padding-left: 0;
-  margin: 0;
-  font-size: 14px;
-  line-height: 24px;
-  letter-spacing: -0.01em;
-  list-style-position: inside;
+.heroLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sanity-accent);
+  margin-bottom: 0.75rem;
 }
 
-.main li:not(:last-of-type) {
-  margin-bottom: 8px;
+.heroTitle {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
 }
 
-.main code {
-  font-family: inherit;
-  background: var(--gray-alpha-100);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-weight: 600;
+.heroSubtitle {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--sanity-foreground-muted);
+  max-width: 560px;
 }
 
 .ctas {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
-.ctas a {
-  appearance: none;
-  border-radius: 128px;
-  height: 48px;
-  padding: 0 20px;
-  font-family: var(--font-geist-sans);
-  border: 1px solid transparent;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-  cursor: pointer;
-  display: flex;
+.ctaPrimary {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 20px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 500;
-}
-
-a.primary {
-  background: var(--foreground);
-  color: var(--background);
-  gap: 8px;
-}
-
-a.secondary {
-  border-color: var(--gray-alpha-200);
-  min-width: 180px;
-}
-
-button.secondary {
-  appearance: none;
-  border-radius: 128px;
-  height: 48px;
-  padding: 0 20px;
-  font-family: var(--font-geist-sans);
-  border: 1px solid transparent;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  background: var(--sanity-foreground);
+  color: var(--sanity-bg);
+  border: none;
   cursor: pointer;
-  display: flex;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.ctaPrimary:hover {
+  opacity: 0.9;
+}
+
+.ctaSecondary {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 20px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 500;
   background: transparent;
-  border-color: var(--gray-alpha-200);
-  min-width: 180px;
+  color: var(--sanity-foreground);
+  border: 1px solid var(--sanity-border-strong);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.footer {
-  font-family: var(--font-geist-sans);
-  grid-row-start: 3;
-  display: flex;
-  gap: 24px;
+.ctaSecondary:hover {
+  background: var(--sanity-bg-muted);
+  border-color: var(--sanity-foreground-muted);
 }
 
-.footer a {
+.ctaAccent {
+  background: var(--sanity-accent);
+  color: var(--sanity-bg);
+  border: none;
+}
+
+.ctaAccent:hover {
+  opacity: 0.95;
+}
+
+.section {
+  padding: 0 2rem 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sectionLabel {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sanity-foreground-muted);
+  margin-bottom: 1.5rem;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--sanity-bg-elevated);
+  border: 1px solid var(--sanity-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: border-color 0.2s, background 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.card:hover {
+  border-color: var(--sanity-border-strong);
+  background: var(--sanity-bg-muted);
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.cardDesc {
+  font-size: 0.875rem;
+  color: var(--sanity-foreground-muted);
+  line-height: 1.5;
+}
+
+.cardIcon {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.powerMeterSection {
+  background: var(--sanity-bg-muted);
+  border: 1px solid var(--sanity-border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 0 2rem 3rem;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.powerMeterHeader {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.footer img {
-  flex-shrink: 0;
+.powerMeterTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
-  }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
-  }
-
-  .footer a:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
+.powerMeterLabel {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sanity-accent);
+  margin-bottom: 0.25rem;
 }
 
-@media (max-width: 600px) {
-  .page {
-    padding: 32px;
-    padding-bottom: 80px;
+.instructions {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--sanity-bg);
+  border-radius: 8px;
+  border: 1px solid var(--sanity-border);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--sanity-foreground-muted);
+}
+
+.instructionsTitle {
+  font-weight: 600;
+  color: var(--sanity-foreground);
+  margin-bottom: 0.5rem;
+}
+
+.instructions ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.instructions li {
+  margin-bottom: 0.25rem;
+}
+
+.btn {
+  appearance: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.btnSecondary {
+  background: transparent;
+  border: 1px solid var(--sanity-border-strong);
+  color: var(--sanity-foreground);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: var(--sanity-bg-elevated);
+  border-color: var(--sanity-foreground-muted);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.btnDanger:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.navLink {
+  font-size: 0.875rem;
+  color: var(--sanity-foreground);
+  text-decoration: none;
+  padding: 0.5rem 0;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+  display: block;
+}
+
+.navLink:hover {
+  color: var(--sanity-accent);
+}
+
+/* Legacy - used by ActionButtons, DeviceList */
+.secondary {
+  appearance: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--sanity-border-strong);
+  color: var(--sanity-foreground);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--sanity-bg-elevated);
+  border-color: var(--sanity-foreground-muted);
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 2.5rem 1.5rem 2rem;
   }
 
-  .main {
-    align-items: center;
-  }
-
-  .main ol {
-    text-align: center;
+  .section,
+  .powerMeterSection {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 
   .ctas {
     flex-direction: column;
-  }
-
-  .ctas a {
-    font-size: 14px;
-    height: 40px;
-    padding: 0 16px;
-  }
-
-  a.secondary {
-    min-width: auto;
-  }
-
-  .footer {
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
   }
 }

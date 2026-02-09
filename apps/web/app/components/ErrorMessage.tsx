@@ -13,7 +13,7 @@ export function ErrorMessage({ message }: ErrorMessageProps) {
         marginBottom: "1rem",
       }}
     >
-      <p style={{ color: "var(--foreground)", margin: 0 }}>{message}</p>
+      <p style={{ color: "var(--sanity-foreground)", margin: 0 }}>{message}</p>
     </div>
   );
 }

@@ -1,0 +1,93 @@
+/* Shared layout styles - Sanity-inspired dark theme */
+
+.listPage {
+  min-height: 100%;
+  padding: 2rem 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.listPageHeader {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--sanity-border);
+}
+
+.listPageHeaderTitle {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--sanity-foreground);
+  margin-bottom: 0.25rem;
+}
+
+.listPageHeaderMeta {
+  font-size: 0.875rem;
+  color: var(--sanity-foreground-muted);
+}
+
+/* Detail page styles */
+.detailPage {
+  min-height: 100%;
+  padding: 2rem 1.5rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: var(--sanity-foreground-muted);
+  margin-bottom: 1rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--sanity-accent);
+}
+
+.detailTitle {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--sanity-foreground);
+  margin-bottom: 0.5rem;
+}
+
+.detailMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--sanity-foreground-muted);
+  margin-bottom: 1rem;
+}
+
+.detailDescription {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  color: var(--sanity-foreground);
+}
+
+.detailSectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sanity-foreground);
+  margin-bottom: 0.75rem;
+}
+
+.detailCard {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--sanity-border);
+  background: var(--sanity-bg-elevated);
+  color: var(--sanity-foreground);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.detailCard:hover {
+  border-color: var(--sanity-border-strong);
+  background: var(--sanity-bg-muted);
+}

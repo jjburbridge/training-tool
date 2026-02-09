@@ -1,12 +1,44 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --gray-rgb: 0, 0, 0;
+  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
+  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
+  --gray-alpha-300: rgba(var(--gray-rgb), 0.12);
+  --gray-alpha-400: rgba(var(--gray-rgb), 0.2);
+  --gray-alpha-500: rgba(var(--gray-rgb), 0.3);
+  --gray-alpha-600: rgba(var(--gray-rgb), 0.45);
+  --gray-alpha-700: rgba(var(--gray-rgb), 0.55);
+}
+
+/* Sanity-inspired palette */
+:root {
+  --sanity-bg: #0a0a0a;
+  --sanity-bg-elevated: #141414;
+  --sanity-bg-muted: #1a1a1a;
+  --sanity-foreground: #ededed;
+  --sanity-foreground-muted: #a3a3a3;
+  --sanity-accent: #84cc16;
+  --sanity-accent-dim: rgba(132, 204, 22, 0.15);
+  --sanity-orange: #f97316;
+  --sanity-border: rgba(255, 255, 255, 0.08);
+  --sanity-border-strong: rgba(255, 255, 255, 0.12);
+  --gray-alpha-400: rgba(255, 255, 255, 0.25);
+  --gray-alpha-500: rgba(255, 255, 255, 0.35);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --gray-rgb: 255, 255, 255;
+    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
+    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
+    --gray-alpha-300: rgba(var(--gray-rgb), 0.2);
+    --gray-alpha-400: rgba(var(--gray-rgb), 0.25);
+    --gray-alpha-500: rgba(var(--gray-rgb), 0.35);
+    --gray-alpha-600: rgba(var(--gray-rgb), 0.6);
+    --gray-alpha-700: rgba(var(--gray-rgb), 0.7);
   }
 }
 

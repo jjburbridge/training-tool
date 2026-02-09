@@ -21,8 +21,8 @@ export function ConnectedDeviceCard({
       style={{
         padding: "1.5rem",
         borderRadius: "8px",
-        backgroundColor: "var(--gray-alpha-100)",
-        border: "1px solid var(--gray-alpha-200)",
+        backgroundColor: "var(--sanity-bg)",
+        border: "1px solid var(--sanity-border)",
         marginBottom: "1rem",
       }}
     >
@@ -31,11 +31,12 @@ export function ConnectedDeviceCard({
           fontSize: "1.25rem",
           fontWeight: 600,
           marginBottom: "0.5rem",
+          color: "var(--sanity-foreground)",
         }}
       >
         Connected Device
       </h2>
-      <p style={{ margin: "0.25rem 0" }}>
+      <p style={{ margin: "0.25rem 0", color: "var(--sanity-foreground)" }}>
         <strong>Name:</strong> {device.name}
       </p>
       <p style={{ margin: "0.25rem 0" }}>
@@ -55,8 +56,8 @@ export function ConnectedDeviceCard({
           display: "inline-block",
           padding: "0.25rem 0.75rem",
           borderRadius: "16px",
-          backgroundColor: "rgba(0, 255, 0, 0.2)",
-          color: "var(--foreground)",
+          backgroundColor: "var(--sanity-accent-dim)",
+          color: "var(--sanity-accent)",
           fontSize: "0.875rem",
           marginTop: "0.5rem",
         }}

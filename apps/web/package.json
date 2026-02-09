@@ -11,19 +11,24 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.36",
+    "@ai-sdk/mcp": "^1.0.18",
+    "@ai-sdk/react": "^3.0.71",
     "@repo/ui": "workspace:*",
     "ai": "^6.0.69",
-    "groq": "^5.7.0",
-    "next": "^16.1.5",
-    "next-sanity": "^12.0.14",
+    "groq": "^5.8.0",
+    "next": "^16.1.6",
+    "next-sanity": "^12.0.16",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^25.0.10",
-    "@types/react": "19.2.10",
+    "@types/node": "^25.2.0",
+    "@types/react": "19.2.11",
     "@types/react-dom": "19.2.3",
     "eslint": "^9.39.2",
     "typescript": "5.9.3"

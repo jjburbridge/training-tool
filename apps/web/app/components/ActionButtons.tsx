@@ -38,11 +38,7 @@ export function ActionButtons({
       {connectedDevice && (
         <button
           onClick={onDisconnect}
-          className={styles.secondary}
-          style={{
-            backgroundColor: "rgba(255, 0, 0, 0.1)",
-            borderColor: "rgba(255, 0, 0, 0.3)",
-          }}
+          className={styles.btnDanger}
         >
           Disconnect Device
         </button>

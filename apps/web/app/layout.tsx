@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Sidebar } from "./components/Sidebar";
+import { Chat } from "./components/Chat";
 import { BluetoothProvider } from "./contexts/BluetoothContext";
 import { FTPProvider } from "./contexts/FTPContext";
 import { PowerDisplayWrapper } from "./components/PowerDisplayWrapper";
@@ -35,6 +36,7 @@ export default function RootLayout({
               style={{
                 display: "flex",
                 minHeight: "100vh",
+                backgroundColor: "var(--sanity-bg)",
               }}
             >
               <Sidebar />
@@ -46,7 +48,8 @@ export default function RootLayout({
                   flexDirection: "column",
                 }}
               >
-                <main style={{ flex: 1 }}>{children}</main>
+                <main style={{ flex: 1, minHeight: 0 }}>{children}</main>
+                <Chat />
               </div>
             </div>
           </BluetoothProvider>

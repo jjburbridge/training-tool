@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { client } from "../../lib/sanity/client";
+import styles from "../../layout.module.css";
 import {
   WORKOUT_QUERY,
   ALL_WORKOUTS_DEBUG_QUERY,
@@ -113,7 +115,11 @@ export default async function WorkoutPage({ params }: WorkoutPageProps) {
   }
 
   return (
-    <WorkoutDisplay workoutTitle={workout.title} segments={workout.segments} />
-
+    <div style={{ padding: "1rem 1.5rem" }}>
+      <Link href="/workouts" className={styles.backLink}>
+        ← Back to Workouts
+      </Link>
+      <WorkoutDisplay workoutTitle={workout.title} segments={workout.segments} />
+    </div>
   );
 }

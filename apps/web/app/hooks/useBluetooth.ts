@@ -34,7 +34,7 @@ export function useBluetooth() {
     (() => void) | null
   >(null);
   const [writeValueFunction, setWriteValueFunction] = useState<
-    ((value: Uint8Array) => void) | null
+    ((value: Uint8Array<ArrayBuffer>) => void) | null
   >(null);
   const checkSupport = useCallback(() => {
     if (typeof window !== "undefined" && navigator.bluetooth) {
@@ -750,7 +750,7 @@ export function useBluetooth() {
           });
         };
 
-        const combinedWriteValue = (value: Uint8Array) => {
+        const combinedWriteValue = (value: Uint8Array<ArrayBuffer>) => {
           allWriteValueFunctions.forEach((fn) => {
             try {
               fn(value);
@@ -776,7 +776,9 @@ export function useBluetooth() {
         // Store individual functions for return value
         notificationFunctions.startNotifications = combinedStartNotifications;
         notificationFunctions.stopNotifications = combinedStopNotifications;
-        notificationFunctions.writeValue = combinedWriteValue;
+        notificationFunctions.writeValue = combinedWriteValue as (
+          value: Uint8Array<ArrayBufferLike>,
+        ) => void;
         // if (info.length > 0) {
         //   setDeviceInfo(info.join(", "));
         // }
